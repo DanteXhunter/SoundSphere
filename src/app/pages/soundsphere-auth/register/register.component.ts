@@ -17,14 +17,31 @@ export class RegisterComponent {
 
   constructor(private auth: AuthLocalService, private router: Router) {}
 
+  private isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  private isValidPassword(password: string): string | null {
+    if (password.length < 8) return 'La contraseña debe tener al menos 8 caracteres.';
+    if (!/[A-Z]/.test(password)) return 'La contraseña debe contener al menos una letra mayúscula.';
+    if (!/[0-9]/.test(password)) return 'La contraseña debe contener al menos un número.';
+    if (!/[^A-Za-z0-9]/.test(password)) return 'La contraseña debe contener al menos un carácter especial (!@#$%...).';
+    return null;
+  }
+
   onSubmit(): void {
     this.error = '';
     if (!this.name || !this.email || !this.password) {
       this.error = 'Todos los campos son requeridos.';
       return;
     }
-    if (this.password.length < 8) {
-      this.error = 'La contraseña debe tener al menos 8 caracteres.';
+    if (!this.isValidEmail(this.email)) {
+      this.error = 'Ingresa un correo electrónico válido (ej: usuario@dominio.com).';
+      return;
+    }
+    const passwordError = this.isValidPassword(this.password);
+    if (passwordError) {
+      this.error = passwordError;
       return;
     }
     this.loading = true;
