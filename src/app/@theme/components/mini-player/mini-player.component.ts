@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subject } from 'rxjs';
+import { combineLatest, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Song } from '../../../@core/models';
 import { PlayerService } from '../../../@core/services/player.service';
@@ -12,17 +12,30 @@ import { PlayerService } from '../../../@core/services/player.service';
 export class MiniPlayerComponent implements OnInit, OnDestroy {
   currentSong: Song | null = null;
   isPlaying = false;
+  isLoading = false;
   progress = 0;
   duration = 0;
+
   private destroy$ = new Subject<void>();
 
   constructor(public player: PlayerService) {}
 
   ngOnInit(): void {
-    this.player.currentSong$.pipe(takeUntil(this.destroy$)).subscribe(s => this.currentSong = s);
-    this.player.isPlaying$.pipe(takeUntil(this.destroy$)).subscribe(p => this.isPlaying = p);
-    this.player.progress$.pipe(takeUntil(this.destroy$)).subscribe(p => this.progress = p);
-    this.player.duration$.pipe(takeUntil(this.destroy$)).subscribe(d => this.duration = d);
+    combineLatest([
+      this.player.currentSong$,
+      this.player.isPlaying$,
+      this.player.loading$,
+      this.player.progress$,
+      this.player.duration$,
+    ]).pipe(takeUntil(this.destroy$)).subscribe(
+      ([song, playing, loading, progress, duration]) => {
+        this.currentSong = song;
+        this.isPlaying = playing;
+        this.isLoading = loading;
+        this.progress = progress;
+        this.duration = duration;
+      },
+    );
   }
 
   ngOnDestroy(): void {
@@ -35,14 +48,19 @@ export class MiniPlayerComponent implements OnInit, OnDestroy {
   }
 
   onSeek(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.player.seek(+input.value);
+    const val = +(event.target as HTMLInputElement).value;
+    this.player.seek(val);
   }
 
-  formatTime(s: number): string {
-    if (!s || isNaN(s)) return '0:00';
-    return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
+  formatTime(sec: number): string {
+    if (!sec || isNaN(sec)) return '0:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
-  stop(): void { this.player.stop(); }
+  get playIcon(): string {
+    if (this.isLoading) return 'loader-outline';
+    return this.isPlaying ? 'pause-circle-outline' : 'play-circle-outline';
+  }
 }
