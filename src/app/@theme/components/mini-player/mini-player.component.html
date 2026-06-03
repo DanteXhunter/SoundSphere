@@ -1,0 +1,28 @@
+<div class="mini-player" *ngIf="currentSong">
+  <img [src]="currentSong.artworkUrl100" [alt]="currentSong.trackName" class="player-art">
+
+  <div class="player-info">
+    <span class="song-name">{{ currentSong.trackName }}</span>
+    <span class="artist-name">{{ currentSong.artistName }}</span>
+  </div>
+
+  <div class="player-controls">
+    <button nbButton ghost size="small" status="primary" (click)="player.toggle(currentSong)">
+      <nb-icon [icon]="isPlaying ? 'pause-circle-outline' : 'play-circle-outline'"></nb-icon>
+    </button>
+    <button nbButton ghost size="small" status="basic" (click)="stop()">
+      <nb-icon icon="square-outline"></nb-icon>
+    </button>
+  </div>
+
+  <div class="player-progress">
+    <span class="time">{{ formatTime(progress) }}</span>
+    <input type="range"
+           class="progress-slider"
+           [min]="0"
+           [max]="duration || 100"
+           [value]="progress"
+           (input)="onSeek($event)">
+    <span class="time">{{ formatTime(duration) }}</span>
+  </div>
+</div>

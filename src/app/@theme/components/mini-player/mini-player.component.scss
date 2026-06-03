@@ -1,0 +1,96 @@
+.mini-player {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  background: nb-theme(background-basic-color-2);
+  border-top: 1px solid nb-theme(border-basic-color-3);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 900;
+  min-height: 64px;
+  backdrop-filter: blur(10px);
+}
+
+.player-art {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.player-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+
+  .song-name {
+    font-weight: 600;
+    font-size: 0.875rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .artist-name {
+    font-size: 0.75rem;
+    color: nb-theme(text-hint-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+
+  button nb-icon {
+    font-size: 1.5rem;
+  }
+}
+
+.player-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 2;
+  max-width: 400px;
+
+  @media (max-width: 576px) {
+    display: none;
+  }
+}
+
+.progress-slider {
+  flex: 1;
+  appearance: none;
+  height: 4px;
+  background: nb-theme(color-primary-200);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+
+  &::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: nb-theme(color-primary-500);
+    cursor: pointer;
+  }
+}
+
+.time {
+  font-size: 0.7rem;
+  color: nb-theme(text-hint-color);
+  flex-shrink: 0;
+  min-width: 30px;
+  text-align: center;
+}
