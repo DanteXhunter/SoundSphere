@@ -4,8 +4,11 @@ import { debounceTime, distinctUntilChanged, switchMap, takeUntil } from 'rxjs/o
 import { Song } from '../../../@core/models';
 import { MusicService } from '../../../@core/services/music.service';
 import { PlaylistService } from '../../../@core/services/playlist.service';
-import { NbToastrService } from '@nebular/theme';
+import { FavoritesService } from '../../../@core/services/favorites.service';
 import { AuthLocalService } from '../../../@core/services/auth-local.service';
+import { NbToastrService } from '@nebular/theme';
+
+type SearchFilter = 'all' | 'song' | 'artist';
 
 @Component({
   selector: 'ngx-search',
@@ -14,7 +17,9 @@ import { AuthLocalService } from '../../../@core/services/auth-local.service';
 })
 export class SearchComponent implements OnInit, OnDestroy {
   query = '';
+  filter: SearchFilter = 'all';
   songs: Song[] = [];
+  filteredSongs: Song[] = [];
   loading = false;
   searched = false;
   selectedSongForPlaylist: Song | null = null;
@@ -26,26 +31,32 @@ export class SearchComponent implements OnInit, OnDestroy {
   constructor(
     private music: MusicService,
     public playlistService: PlaylistService,
+    public favoritesService: FavoritesService,
     private auth: AuthLocalService,
     private toastr: NbToastrService,
   ) {}
 
   ngOnInit(): void {
     this.searchSubject.pipe(
-      debounceTime(400),
+      debounceTime(450),
       distinctUntilChanged(),
-      switchMap(q => {
+      switchMap(term => {
         this.loading = true;
         this.searched = true;
-        return this.music.search(q);
+        // iTunes API searches both song name and artist by default; we'll post-filter client side
+        return this.music.search(term);
       }),
       takeUntil(this.destroy$),
     ).subscribe({
       next: songs => {
         this.songs = songs;
+        this.applyFilter();
         this.loading = false;
       },
-      error: () => { this.loading = false; },
+      error: () => {
+        this.loading = false;
+        this.toastr.danger('Error al buscar. Verifica tu conexión.', 'Error');
+      },
     });
   }
 
@@ -56,14 +67,46 @@ export class SearchComponent implements OnInit, OnDestroy {
 
   isLoggedIn(): boolean { return this.auth.isLoggedIn(); }
 
-  onSearch(): void {
-    if (this.query.trim()) this.searchSubject.next(this.query.trim());
+  onQueryChange(): void {
+    if (this.query.trim().length >= 2) {
+      this.searchSubject.next(this.query.trim());
+    } else if (!this.query.trim()) {
+      this.clearSearch();
+    }
+  }
+
+  onFilterChange(f: SearchFilter): void {
+    this.filter = f;
+    this.applyFilter();
+  }
+
+  /**
+   * Post-filters results client-side based on the selected filter tab.
+   * 'song'   → trackName must include the query (case-insensitive)
+   * 'artist' → artistName must include the query (case-insensitive)
+   * 'all'    → show everything returned by the API
+   */
+  private applyFilter(): void {
+    const q = this.query.trim().toLowerCase();
+    if (this.filter === 'song') {
+      this.filteredSongs = this.songs.filter(s =>
+        s.trackName.toLowerCase().includes(q),
+      );
+    } else if (this.filter === 'artist') {
+      this.filteredSongs = this.songs.filter(s =>
+        s.artistName.toLowerCase().includes(q),
+      );
+    } else {
+      this.filteredSongs = [...this.songs];
+    }
   }
 
   clearSearch(): void {
     this.query = '';
     this.songs = [];
+    this.filteredSongs = [];
     this.searched = false;
+    this.filter = 'all';
   }
 
   onAddToPlaylist(song: Song): void {
@@ -74,8 +117,9 @@ export class SearchComponent implements OnInit, OnDestroy {
   addToPlaylist(playlistId: string): void {
     if (!this.selectedSongForPlaylist) return;
     this.playlistService.addSongToPlaylist(playlistId, this.selectedSongForPlaylist);
-    this.toastr.success('Canción agregada a la playlist', 'Listo');
+    this.toastr.success('Canción agregada a la playlist', 'Playlist');
     this.showPlaylistPicker = false;
+    this.selectedSongForPlaylist = null;
   }
 
   cancelPlaylistPicker(): void {
