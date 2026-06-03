@@ -1,0 +1,73 @@
+<div class="auth-page">
+  <nb-card class="auth-card">
+    <nb-card-header>
+      <h2 class="title">SoundSphere</h2>
+      <p class="subtitle">Crea tu cuenta</p>
+    </nb-card-header>
+
+    <nb-card-body>
+      <div *ngIf="success" class="success-message">
+        <nb-icon icon="checkmark-circle-2-outline" status="success"></nb-icon>
+        <span>¡Cuenta creada con éxito! Redirigiendo al login...</span>
+      </div>
+
+      <form *ngIf="!success" (ngSubmit)="onSubmit()" #registerForm="ngForm">
+        <div class="form-group">
+          <label class="label">Nombre completo</label>
+          <input nbInput
+                 fullWidth
+                 [(ngModel)]="name"
+                 name="name"
+                 type="text"
+                 placeholder="Tu nombre"
+                 required>
+        </div>
+
+        <div class="form-group">
+          <label class="label">Correo electrónico</label>
+          <input nbInput
+                 fullWidth
+                 [(ngModel)]="email"
+                 name="email"
+                 type="email"
+                 placeholder="correo@ejemplo.com"
+                 required>
+        </div>
+
+        <div class="form-group">
+          <label class="label">Contraseña</label>
+          <input nbInput
+                 fullWidth
+                 [(ngModel)]="password"
+                 name="password"
+                 type="password"
+                 placeholder="Mínimo 8 caracteres"
+                 required
+                 minlength="8">
+          <p class="hint">Mínimo 8 caracteres</p>
+        </div>
+
+        <div *ngIf="error" class="error-message">
+          <nb-icon icon="alert-circle-outline" status="danger"></nb-icon>
+          <span>{{ error }}</span>
+        </div>
+
+        <button nbButton
+                fullWidth
+                status="primary"
+                type="submit"
+                [disabled]="loading">
+          <nb-icon *ngIf="loading" icon="loader-outline"></nb-icon>
+          {{ loading ? 'Registrando...' : 'Crear cuenta' }}
+        </button>
+      </form>
+    </nb-card-body>
+
+    <nb-card-footer>
+      <p class="footer-text">
+        ¿Ya tienes cuenta?
+        <a routerLink="/soundsphere/login">Inicia sesión</a>
+      </p>
+    </nb-card-footer>
+  </nb-card>
+</div>
