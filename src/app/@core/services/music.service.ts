@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { Song } from '../models';
+import { environment } from '../../../environments/environment';
 
 interface ItunesResponse {
   resultCount: number;
@@ -24,57 +25,71 @@ interface ItunesTrack {
 
 @Injectable({ providedIn: 'root' })
 export class MusicService {
-  private readonly BASE = 'https://itunes.apple.com/search';
+  private readonly searchUrl = environment.itunesApiUrl;
 
   constructor(private http: HttpClient) {}
 
-  private toSong(track: ItunesTrack): Song {
+  private mapTrack(track: ItunesTrack): Song {
     return {
       trackId: track.trackId,
       trackName: track.trackName,
       artistName: track.artistName,
       collectionName: track.collectionName || '',
-      artworkUrl100: (track.artworkUrl100 || '').replace('100x100', '300x300'),
+      // Upgrade artwork resolution from 100x100 to 300x300 for better quality
+      artworkUrl100: (track.artworkUrl100 || '').replace('100x100bb', '300x300bb'),
       previewUrl: track.previewUrl || '',
-      primaryGenreName: track.primaryGenreName || '',
+      primaryGenreName: track.primaryGenreName || 'Desconocido',
       trackTimeMillis: track.trackTimeMillis || 0,
     };
   }
 
-  private fetch(term: string, limit = 20): Observable<Song[]> {
+  private query(term: string, limit = 20): Observable<Song[]> {
     const params = new HttpParams()
       .set('term', term)
       .set('media', 'music')
       .set('entity', 'song')
-      .set('limit', limit.toString());
+      .set('limit', String(limit))
+      .set('explicit', 'No');
 
-    return this.http.get<ItunesResponse>(this.BASE, { params }).pipe(
-      map(res => res.results
-        .filter(r => r.wrapperType === 'track' && r.kind === 'song' && r.previewUrl)
-        .map(r => this.toSong(r)),
+    return this.http.get<ItunesResponse>(this.searchUrl, { params }).pipe(
+      map(res =>
+        res.results
+          .filter(r => r.wrapperType === 'track' && r.kind === 'song' && !!r.previewUrl)
+          .map(r => this.mapTrack(r)),
       ),
       catchError(() => of([])),
     );
   }
 
-  search(query: string): Observable<Song[]> {
-    if (!query.trim()) return of([]);
-    return this.fetch(query);
+  /** Busca canciones por nombre de canción o artista */
+  search(term: string): Observable<Song[]> {
+    const clean = term.trim();
+    if (!clean) return of([]);
+    return this.query(clean, 20);
   }
 
-  getTopCharts(): Observable<Song[]> {
-    return this.fetch('top hits 2024', 20);
-  }
-
-  getTrending(): Observable<Song[]> {
-    return this.fetch('trending music 2024', 10);
-  }
-
-  getSongsByArtist(artist: string): Observable<Song[]> {
-    return this.fetch(artist, 10);
-  }
-
+  /** Top hits del año actual para el catálogo principal */
   getCatalog(): Observable<Song[]> {
-    return this.fetch('pop music hits', 20);
+    return this.query('top hits 2024', 20);
+  }
+
+  /** Top charts para el dashboard */
+  getTopCharts(): Observable<Song[]> {
+    return this.query('billboard hot 100', 20);
+  }
+
+  /** Artistas en tendencia para el dashboard */
+  getTrending(): Observable<Song[]> {
+    return this.query('trending pop 2024', 10);
+  }
+
+  /** Canciones por artista específico */
+  getSongsByArtist(artist: string): Observable<Song[]> {
+    return this.query(artist, 10);
+  }
+
+  /** Canciones por género musical */
+  getSongsByGenre(genre: string): Observable<Song[]> {
+    return this.query(`${genre} music`, 20);
   }
 }
