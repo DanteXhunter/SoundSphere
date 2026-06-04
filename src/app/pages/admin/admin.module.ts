@@ -4,7 +4,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import {
   NbCardModule, NbButtonModule, NbIconModule, NbInputModule,
-  NbSpinnerModule, NbToastrModule,
+  NbSpinnerModule, NbToastrModule, NbFormFieldModule, NbSelectModule,
 } from '@nebular/theme';
 import { AdminSongsComponent } from './songs/admin-songs.component';
 
@@ -25,6 +25,8 @@ const routes: Routes = [
     NbInputModule,
     NbSpinnerModule,
     NbToastrModule,
+    NbFormFieldModule,
+    NbSelectModule,
   ],
 })
 export class AdminModule {}

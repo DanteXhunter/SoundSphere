@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { NbDialogService, NbToastrService } from '@nebular/theme';
+import { NbToastrService } from '@nebular/theme';
 import { Song } from '../../../@core/models';
 import { MusicService } from '../../../@core/services/music.service';
 
@@ -18,10 +18,18 @@ const ADMIN_SONGS_KEY = 'soundsphere_admin_songs';
 })
 export class AdminSongsComponent implements OnInit {
   songs: AdminSong[] = [];
+  filteredSongs: AdminSong[] = [];
   loading = true;
   showAddForm = false;
+  searchQuery = '';
+  selectedGenre = '';
   newSong = { trackName: '', artistName: '', collectionName: '', primaryGenreName: '' };
   confirmDeleteId: number | null = null;
+
+  get genres(): string[] {
+    const set = new Set(this.songs.map(s => s.primaryGenreName).filter(Boolean));
+    return Array.from(set).sort();
+  }
 
   constructor(
     private music: MusicService,
@@ -32,11 +40,13 @@ export class AdminSongsComponent implements OnInit {
     const saved = localStorage.getItem(ADMIN_SONGS_KEY);
     if (saved) {
       this.songs = JSON.parse(saved);
+      this.applyFilter();
       this.loading = false;
     } else {
       this.music.getCatalog().subscribe(songs => {
         this.songs = songs;
         this.saveSongs();
+        this.applyFilter();
         this.loading = false;
       });
     }
@@ -44,6 +54,23 @@ export class AdminSongsComponent implements OnInit {
 
   private saveSongs(): void {
     localStorage.setItem(ADMIN_SONGS_KEY, JSON.stringify(this.songs));
+  }
+
+  applyFilter(): void {
+    const q = this.searchQuery.trim().toLowerCase();
+    this.filteredSongs = this.songs.filter(s => {
+      const matchesQuery = !q ||
+        s.trackName.toLowerCase().includes(q) ||
+        s.artistName.toLowerCase().includes(q);
+      const matchesGenre = !this.selectedGenre || s.primaryGenreName === this.selectedGenre;
+      return matchesQuery && matchesGenre;
+    });
+  }
+
+  clearFilters(): void {
+    this.searchQuery = '';
+    this.selectedGenre = '';
+    this.applyFilter();
   }
 
   addSong(): void {
@@ -63,6 +90,7 @@ export class AdminSongsComponent implements OnInit {
     };
     this.songs = [song, ...this.songs];
     this.saveSongs();
+    this.applyFilter();
     this.toastr.success('Canción agregada', 'Administración');
     this.newSong = { trackName: '', artistName: '', collectionName: '', primaryGenreName: '' };
     this.showAddForm = false;
@@ -80,6 +108,7 @@ export class AdminSongsComponent implements OnInit {
     song.artistName = song.editArtist?.trim() || song.artistName;
     song.isEditing = false;
     this.saveSongs();
+    this.applyFilter();
     this.toastr.success('Canción actualizada', 'Administración');
   }
 
@@ -94,6 +123,7 @@ export class AdminSongsComponent implements OnInit {
   confirmDelete(): void {
     this.songs = this.songs.filter(s => s.trackId !== this.confirmDeleteId);
     this.saveSongs();
+    this.applyFilter();
     this.toastr.info('Canción eliminada', 'Administración');
     this.confirmDeleteId = null;
   }
