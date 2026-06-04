@@ -1,8 +1,29 @@
 <nb-card>
   <nb-card-header>
     <h5>Mi Perfil</h5>
+    <small *ngIf="memberSince" class="member-since">Miembro desde {{ memberSince }}</small>
   </nb-card-header>
   <nb-card-body>
+
+    <!-- Stats row -->
+    <div class="stats-row">
+      <div class="stat-item">
+        <nb-icon icon="heart-outline" status="danger"></nb-icon>
+        <strong>{{ stats.favorites }}</strong>
+        <small>Favoritos</small>
+      </div>
+      <div class="stat-item">
+        <nb-icon icon="music-outline" status="primary"></nb-icon>
+        <strong>{{ stats.playlists }}</strong>
+        <small>Playlists</small>
+      </div>
+      <div class="stat-item">
+        <nb-icon icon="headphones-outline" status="success"></nb-icon>
+        <strong>{{ stats.totalSongs }}</strong>
+        <small>Canciones guardadas</small>
+      </div>
+    </div>
+
     <div class="profile-layout">
       <!-- Avatar -->
       <div class="avatar-section">
