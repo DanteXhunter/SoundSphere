@@ -3,7 +3,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Playlist } from '../../../@core/models';
 import { PlaylistService } from '../../../@core/services/playlist.service';
-import { NbToastrService, NbDialogService } from '@nebular/theme';
+import { NbToastrService } from '@nebular/theme';
 
 @Component({
   selector: 'ngx-playlists',
@@ -14,6 +14,9 @@ export class PlaylistsComponent implements OnInit, OnDestroy {
   playlists: Playlist[] = [];
   newPlaylistName = '';
   showCreateForm = false;
+  renamingId: string | null = null;
+  renameValue = '';
+  confirmDeleteId: string | null = null;
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -40,9 +43,41 @@ export class PlaylistsComponent implements OnInit, OnDestroy {
     this.showCreateForm = false;
   }
 
-  deletePlaylist(id: string): void {
-    this.playlistService.deletePlaylist(id);
+  startRename(playlist: Playlist): void {
+    this.renamingId = playlist.id;
+    this.renameValue = playlist.name;
+  }
+
+  saveRename(): void {
+    if (!this.renamingId || !this.renameValue.trim()) return;
+    this.playlistService.renamePlaylist(this.renamingId, this.renameValue.trim());
+    this.toastr.success('Playlist renombrada', 'Playlists');
+    this.renamingId = null;
+    this.renameValue = '';
+  }
+
+  cancelRename(): void {
+    this.renamingId = null;
+    this.renameValue = '';
+  }
+
+  requestDelete(id: string): void {
+    this.confirmDeleteId = id;
+  }
+
+  confirmDelete(): void {
+    if (!this.confirmDeleteId) return;
+    this.playlistService.deletePlaylist(this.confirmDeleteId);
     this.toastr.info('Playlist eliminada', 'Playlists');
+    this.confirmDeleteId = null;
+  }
+
+  cancelDelete(): void {
+    this.confirmDeleteId = null;
+  }
+
+  formatDate(isoDate: string): string {
+    return new Date(isoDate).toLocaleDateString('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
   trackByPlaylist(_: number, p: Playlist): string { return p.id; }
