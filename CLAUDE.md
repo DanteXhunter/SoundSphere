@@ -168,18 +168,18 @@ Sin CORS issues desde browser, sin API key requerida.
 
 ## User Stories Implementadas
 
-| ID    | Feature                     | Rama                                           | Estado |
-|-------|-----------------------------|------------------------------------------------|--------|
-| US-01 | Registro de usuario         | diegorojas13579/us-01-registro-usuario         | TODO   |
-| US-02 | Inicio de sesión            | diegorojas13579/us-02-inicio-sesion            | TODO   |
-| US-03 | Explorar canciones          | diegorojas13579/us-03-explorar-canciones       | TODO   |
-| US-04 | Buscar canciones            | diegorojas13579/us-04-buscar-canciones         | TODO   |
-| US-05 | Reproducir preview musical  | diegorojas13579/us-05-reproducir-preview       | TODO   |
-| US-06 | Agregar favoritos           | diegorojas13579/us-06-agregar-favoritos        | TODO   |
-| US-07 | Crear playlists             | diegorojas13579/us-07-crear-playlists          | TODO   |
-| US-08 | Dashboard musical           | diegorojas13579/us-08-dashboard-musical        | TODO   |
-| US-09 | Gestión de perfil           | diegorojas13579/us-09-gestion-perfil           | TODO   |
-| US-10 | Gestión admin canciones     | diegorojas13579/us-10-gestion-admin-canciones  | TODO   |
+| ID    | Feature                     | Rama                                           | Estado  |
+|-------|-----------------------------|------------------------------------------------|---------|
+| US-01 | Registro de usuario         | diegorojas13579/us-01-registro-usuario         | DONE    |
+| US-02 | Inicio de sesión            | diegorojas13579/us-02-inicio-sesion            | DONE    |
+| US-03 | Explorar canciones          | diegorojas13579/us-03-explorar-canciones       | DONE    |
+| US-04 | Buscar canciones            | diegorojas13579/us-04-buscar-canciones         | DONE    |
+| US-05 | Reproducir preview musical  | diegorojas13579/us-05-reproducir-preview       | DONE    |
+| US-06 | Agregar favoritos           | diegorojas13579/us-06-agregar-favoritos        | DONE    |
+| US-07 | Crear playlists             | diegorojas13579/us-07-crear-playlists          | DONE    |
+| US-08 | Dashboard musical           | diegorojas13579/us-08-dashboard-musical        | DONE    |
+| US-09 | Gestión de perfil           | diegorojas13579/us-09-gestion-perfil           | DONE    |
+| US-10 | Gestión admin canciones     | diegorojas13579/us-10-gestion-admin-canciones  | DONE    |
 
 ---
 
@@ -214,3 +214,43 @@ ng generate component pages/music/catalog  # generar componente
 - El layout principal es `OneColumnLayoutComponent` — el mini-player se inyecta en el footer.
 - `NbToastrService` para mensajes de éxito/error.
 - `NbDialogService` para confirmaciones de eliminación.
+- El puerto 4200 puede estar ocupado por la demo de ngx-admin; en ese caso el proyecto arranca en 4201.
+
+---
+
+## Cambios Realizados (sesión 2026-06-03)
+
+### Corrección de spinner inicial (`src/main.ts`)
+El `div#nb-global-spinner` definido en `index.html` nunca se ocultaba porque `main.ts` no tenía el `.then()` post-bootstrap. Se agregó:
+```typescript
+platformBrowserDynamic().bootstrapModule(AppModule)
+  .then(() => {
+    const spinner = document.getElementById('nb-global-spinner');
+    if (spinner) spinner.style.display = 'none';
+  })
+```
+
+### Rediseño de páginas de autenticación (`pages/soundsphere-auth/`)
+Login y registro rediseñados completamente. **No usar `nb-card-header/body/footer`** — sus bordes y estilos por defecto rompen el diseño. En su lugar se usa HTML plano con SCSS propio:
+- Fondo `#0d0d1a` con 3 orbes animados (púrpura, azul, rosa) via `@keyframes float`
+- Card con glassmorphism: `backdrop-filter: blur(20px)`, `background: rgba(255,255,255,0.04)`
+- Inputs completamente custom (clase `.custom-input`) con icono SVG absoluto dentro de `.input-wrapper`
+- Logo SVG con `linearGradient` y `filter: drop-shadow` para glow
+- Texto del título con gradiente via `-webkit-background-clip: text`
+- Botón submit con `background: linear-gradient(135deg, #7c3aed, #3b82f6)`
+- Regla stylelint: los `@keyframes` con múltiples propiedades deben ir en líneas separadas (no en una sola línea) o el pre-push hook falla
+
+### Validaciones en registro (`register.component.ts`)
+- Email: regex `/^[^\s@]+@[^\s@]+\.[^\s@]+$/`
+- Contraseña: mínimo 8 caracteres + `/[A-Z]/` + `/[0-9]/` + `/[^A-Za-z0-9]/`
+- Validaciones aplicadas en el componente, no en el HTML (se quitó `minlength="8"` del input)
+
+### Header: separación del selector de tema (`header.component`)
+Se añadió clase `theme-select` con `margin-left: 2rem` al `nb-select` para evitar que se empalme con el título "SoundSphere".
+
+### Estrategia de ramas — lección aprendida
+Las ramas US-01 a US-05 fueron construidas en cadena (una encima de otra) en lugar de partir desde `develop`. Al mergear US-03 y US-05 a `develop`, todos los commits quedaron integrados. **Para nuevas ramas siempre partir desde `develop`:**
+```bash
+git checkout develop && git pull origin develop
+git checkout -b diegorojas13579/us-XX-nombre
+```
