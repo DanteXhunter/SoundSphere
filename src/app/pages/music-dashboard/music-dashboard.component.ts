@@ -5,6 +5,8 @@ import { Song } from '../../@core/models';
 import { MusicService } from '../../@core/services/music.service';
 import { PlayerService } from '../../@core/services/player.service';
 import { AuthLocalService } from '../../@core/services/auth-local.service';
+import { FavoritesService } from '../../@core/services/favorites.service';
+import { PlaylistService } from '../../@core/services/playlist.service';
 
 @Component({
   selector: 'ngx-music-dashboard',
@@ -20,10 +22,14 @@ export class MusicDashboardComponent implements OnInit, OnDestroy {
 
   genreStats: { genre: string; count: number; percent: number }[] = [];
 
+  userStats = { favorites: 0, playlists: 0, totalSongs: 0 };
+
   constructor(
     private music: MusicService,
     public player: PlayerService,
     private auth: AuthLocalService,
+    private favoritesService: FavoritesService,
+    private playlistService: PlaylistService,
   ) {}
 
   ngOnInit(): void {
@@ -33,6 +39,15 @@ export class MusicDashboardComponent implements OnInit, OnDestroy {
       this.loading = false;
       this.buildGenreStats(songs);
       this.buildTrendingArtists(songs);
+    });
+
+    this.favoritesService.favorites$.pipe(takeUntil(this.destroy$)).subscribe(favs => {
+      this.userStats.favorites = favs.length;
+    });
+
+    this.playlistService.playlists$.pipe(takeUntil(this.destroy$)).subscribe(pls => {
+      this.userStats.playlists = pls.length;
+      this.userStats.totalSongs = pls.reduce((sum, p) => sum + p.songs.length, 0);
     });
   }
 
