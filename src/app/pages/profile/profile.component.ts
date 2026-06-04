@@ -1,6 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { NbToastrService } from '@nebular/theme';
 import { AuthLocalService } from '../../@core/services/auth-local.service';
+import { FavoritesService } from '../../@core/services/favorites.service';
+import { PlaylistService } from '../../@core/services/playlist.service';
 import { User } from '../../@core/models';
 
 @Component({
@@ -8,7 +12,7 @@ import { User } from '../../@core/models';
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss'],
 })
-export class ProfileComponent implements OnInit {
+export class ProfileComponent implements OnInit, OnDestroy {
   user: User | null = null;
   name = '';
   currentPassword = '';
@@ -17,8 +21,15 @@ export class ProfileComponent implements OnInit {
   avatarPreview = '';
   error = '';
   success = '';
+  stats = { favorites: 0, playlists: 0, totalSongs: 0 };
+  private destroy$ = new Subject<void>();
 
-  constructor(private auth: AuthLocalService, private toastr: NbToastrService) {}
+  constructor(
+    private auth: AuthLocalService,
+    private toastr: NbToastrService,
+    private favoritesService: FavoritesService,
+    private playlistService: PlaylistService,
+  ) {}
 
   ngOnInit(): void {
     this.user = this.auth.getCurrentUser();
@@ -26,6 +37,27 @@ export class ProfileComponent implements OnInit {
       this.name = this.user.name;
       this.avatarPreview = this.user.avatarUrl || '';
     }
+
+    this.favoritesService.favorites$.pipe(takeUntil(this.destroy$)).subscribe(favs => {
+      this.stats.favorites = favs.length;
+    });
+
+    this.playlistService.playlists$.pipe(takeUntil(this.destroy$)).subscribe(pls => {
+      this.stats.playlists = pls.length;
+      this.stats.totalSongs = pls.reduce((sum, p) => sum + p.songs.length, 0);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  get memberSince(): string {
+    if (!this.user?.createdAt) return '';
+    return new Date(this.user.createdAt).toLocaleDateString('es-MX', {
+      day: 'numeric', month: 'long', year: 'numeric',
+    });
   }
 
   onAvatarChange(event: Event): void {

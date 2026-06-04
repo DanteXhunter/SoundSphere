@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import {
-  NbCardModule, NbButtonModule, NbIconModule, NbInputModule,
+  NbCardModule, NbButtonModule, NbIconModule, NbInputModule, NbToastrModule, NbBadgeModule,
 } from '@nebular/theme';
 import { ProfileComponent } from './profile.component';
 
@@ -21,6 +21,8 @@ const routes: Routes = [
     NbButtonModule,
     NbIconModule,
     NbInputModule,
+    NbToastrModule,
+    NbBadgeModule,
   ],
 })
 export class ProfileModule {}
